@@ -99,7 +99,7 @@ export class News extends Component {
                         columnGap: "10px"
                     }}>
                         {this.state.articles.map((e, index) => {
-                            return <NewsItem key={index} title={e.title} description={e.description} imageUrl={e.urlToImage} newsUrl={e.url} />
+                            return <NewsItem key={index} title={e.title} description={e.description} imageUrl={e.urlToImage} newsUrl={e.url} author={e.author} date={e.publishedAt} source={e.source.name} />
                         })}
                     </div >
                 }
