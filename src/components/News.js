@@ -2,12 +2,21 @@ import React, { Component } from 'react'
 import NewsItem from './NewsItem'
 import Spinner from './Spinner';
 import Categories from './Categories';
+import PropTypes from 'prop-types'
 
 export class News extends Component {
 
-    // static defaultProps = {
-    //     category: "general",
-    // }
+    static defaultProps = {
+        category: "general",
+        country: "in",
+        pageSize: 15
+    }
+
+    static propTypes = {
+        category: PropTypes.string,
+        country: PropTypes.string,
+        pageSize: PropTypes.number
+    }
 
     constructor() {
         super();
