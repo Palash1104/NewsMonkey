@@ -18,13 +18,23 @@ export class News extends Component {
         pageSize: PropTypes.number
     }
 
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
         this.state = {
             articles: [],
             loading: false,
             page: 1,
             category: "general"
+        };
+    }
+
+    capitalizeFirstLetter = (string) => {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    componentDidUpdate(prevState) {
+        if (prevState.category !== this.state.category) {
+            document.title = `NewsMonkey - ${this.capitalizeFirstLetter(this.state.category)}`;
         }
     }
 
@@ -96,7 +106,7 @@ export class News extends Component {
                 </div>
 
                 <div className="container my-5" style={{ textAlign: "center", fontWeight: "bolder" }}>
-                    <h1>TOP HEADLINES</h1>
+                    <h1>TOP {(this.state.category).toUpperCase()} HEADLINES</h1>
                 </div>
 
                 {this.state.loading && <Spinner />}
