@@ -81,7 +81,7 @@ export class News extends Component {
     // }
 
     handleCategoryChange = async (c) => {
-        this.setState({ category: c }, async () => {
+        this.setState({ category: c, page: 1, totalResults: 0, articles: [] }, async () => {
             let url = `https://newsapi.org/v2/top-headlines?country=${this.state.country}&category=${this.state.category}&apiKey=034bb2eac2564a259ea677a6c0f8fcbe&page=1&pageSize=${this.props.pageSize}`
             this.setState({ loading: true })
             let data = await fetch(url)
@@ -131,7 +131,7 @@ export class News extends Component {
                 <InfiniteScroll
                     dataLength={this.state.articles.length}
                     next={this.fetchMoreData}
-                    hasMore={this.state.articles !== this.totalResults}
+                    hasMore={this.state.articles.length !== this.state.totalResults}
                     loader={<Spinner />}
                 >
                     <div style={{
