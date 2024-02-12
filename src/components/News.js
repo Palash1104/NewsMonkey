@@ -1,134 +1,137 @@
-import React, { Component } from 'react'
+import React, { useState, useEffect } from 'react'
 import NewsItem from './NewsItem'
 import Spinner from './Spinner';
 import Categories from './Categories';
 import PropTypes from 'prop-types'
 import InfiniteScroll from "react-infinite-scroll-component";
 
-export class News extends Component {
+const News = (props) => {
 
-    static defaultProps = {
-        category: "general",
-        country: "in",
-        pageSize: 15
-    }
+    const [articles, setarticles] = useState([])
+    const [loading, setLoading] = useState(false)
+    const [pageSize, setPageSize] = useState(1)
+    const [page, setPage] = useState(1)
+    const [category, setCategory] = useState("general")
+    const [country, setCountry] = useState("in")
 
-    static propTypes = {
-        category: PropTypes.string,
-        country: PropTypes.string,
-        pageSize: PropTypes.number,
-        apiKey: PropTypes.string.isRequired
-    }
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            articles: [],
-            loading: false,
-            page: 1,
-            category: "general",
-            totalResults: 0,
-            country: "in"
-        };
-    }
-
-    capitalizeFirstLetter = (string) => {
+    const capitalizeFirstLetter = (string) => {
         return string.charAt(0).toUpperCase() + string.slice(1);
     }
 
-    componentDidUpdate(prevState) {
-        if (prevState.category !== this.state.category) {
-            document.title = `NewsMonkey - ${this.capitalizeFirstLetter(this.state.category)}`;
-        }
-    }
+    useEffect(() => {
+        document.title = `NewsMonkey - ${capitalizeFirstLetter(category)}`;
+    }, [category]);
 
-    async componentDidMount() {
-        this.props.setProgress(10)
-        let url = `https://newsapi.org/v2/top-headlines?country=${this.state.country}&category=${this.state.category}&apiKey=${this.props.apiKey}&page=1&pageSize=${this.props.pageSize}`
-        this.setState({ loading: true })
-        let data = await fetch(url)
-        this.props.setProgress(30)
-        let parsedData = await data.json()
-        this.props.setProgress(50)
-        this.setState({
-            articles: parsedData.articles,
-            totalResults: parsedData.totalResults,
-            loading: false
-        })
-        this.props.setProgress(100)
-    }
 
-    handleCategoryChange = async (c) => {
-        this.props.setProgress(10)
-        this.setState({ category: c, page: 1, totalResults: 0, articles: [] }, async () => {
-            let url = `https://newsapi.org/v2/top-headlines?country=${this.state.country}&category=${this.state.category}&apiKey=${this.props.apiKey}&page=1&pageSize=${this.props.pageSize}`
-            this.setState({ loading: true })
-            let data = await fetch(url)
-            this.props.setProgress(30)
-            let parsedData = await data.json()
-            this.props.setProgress(50)
-            this.setState({
-                articles: parsedData.articles,
-                totalResults: parsedData.totalResults,
-                loading: false
+    useEffect(() => {
+        props.setProgress(10);
+        let url = `https://newsapi.org/v2/top-headlines?country=${country}&category=${category}&apiKey=${props.apiKey}&page=1&pageSize=${props.pageSize}`;
+
+        setLoading(true);
+
+        fetch(url)
+            .then((data) => {
+                if (!data.ok) {
+                    throw new Error(`HTTP error! Status: ${data.status}`);
+                }
+                return data.json();
             })
-            this.props.setProgress(100)
-        });
+            .then((parsedData) => {
+                props.setProgress(50);
+
+                // Check if articles array is empty before updating
+                if (parsedData.articles && parsedData.articles.length > 0) {
+                    setarticles(parsedData.articles);
+                }
+
+                setPageSize(parsedData.totalResults);
+                setLoading(false);
+                props.setProgress(100);
+            })
+            .catch((error) => {
+                console.error('Error fetching data:', error);
+                // Handle error, e.g., show an error message to the user
+                setLoading(false);
+            });
+    }, []);
+
+    const handleCategoryChange = async (c) => {
+        props.setProgress(10)
+        setCategory(c)
+        let url = `https://newsapi.org/v2/top-headlines?country=${country}&category=${c}&apiKey=${props.apiKey}&page=1&pageSize=${props.pageSize}`
+        setLoading(true)
+        let data = await fetch(url)
+        props.setProgress(30)
+        let parsedData = await data.json()
+        props.setProgress(50)
+        setarticles(parsedData.articles)
+        setPageSize(parsedData.totalResults)
+        setLoading(false)
+        props.setProgress(100)
     }
 
-    fetchMoreData = async () => {
-        let nextPage = this.state.page + 1;
-        let url = `https://newsapi.org/v2/top-headlines?country=${this.state.country}&category=${this.state.category}&apiKey=${this.props.apiKey}&page=${nextPage}&pageSize=${this.props.pageSize}`
-        this.setState({ loading: true })
+    const fetchMoreData = async () => {
+        let nextPage = page + 1;
+        let url = `https://newsapi.org/v2/top-headlines?country=${country}&category=${category}&apiKey=${props.apiKey}&page=${nextPage}&pageSize=${props.pageSize}`
+        setLoading(true)
         let data = await fetch(url)
         let parsedData = await data.json()
-        this.setState({
-            page: nextPage,
-            articles: this.state.articles.concat(parsedData.articles),
-            totalResults: parsedData.totalResults,
-            loading: false
-        })
+        setPage(nextPage)
+        setarticles(prevArticles => prevArticles.concat(parsedData.articles))
+        setPageSize(parsedData.totalResults)
+        setLoading(false)
     };
 
-    render() {
-        return (
-            <div className="container my-3 text-white">
+    return (
+        <div className="container my-3 text-white">
 
-                <div className="container d-flex justify-content-between">
-                    <Categories category="Business" onClick={() => this.handleCategoryChange("business")} />
-                    <Categories category="Entertainment" onClick={() => this.handleCategoryChange("entertainment")} />
-                    <Categories category="Science" onClick={() => this.handleCategoryChange("science")} />
-                    <Categories category="Sports" onClick={() => this.handleCategoryChange("sports")} />
-                    <Categories category="General" onClick={() => this.handleCategoryChange("general")} />
-                    <Categories category="Health" onClick={() => this.handleCategoryChange("health")} />
-                    <Categories category="Technology" onClick={() => this.handleCategoryChange("technology")} />
-                </div>
+            <div className="container d-flex justify-content-between">
+                <Categories category="Business" onClick={() => handleCategoryChange("business")} />
+                <Categories category="Entertainment" onClick={() => handleCategoryChange("entertainment")} />
+                <Categories category="Science" onClick={() => handleCategoryChange("science")} />
+                <Categories category="Sports" onClick={() => handleCategoryChange("sports")} />
+                <Categories category="General" onClick={() => handleCategoryChange("general")} />
+                <Categories category="Health" onClick={() => handleCategoryChange("health")} />
+                <Categories category="Technology" onClick={() => handleCategoryChange("technology")} />
+            </div>
 
-                <div className="container my-5" style={{ textAlign: "center", fontWeight: "bolder" }}>
-                    <h1>TOP {(this.state.category).toUpperCase()} HEADLINES</h1>
-                </div>
+            <div className="container my-5" style={{ textAlign: "center", fontWeight: "bolder" }}>
+                <h1>TOP {(category).toUpperCase()} HEADLINES</h1>
+            </div>
 
-                <InfiniteScroll
-                    dataLength={this.state.articles.length}
-                    next={this.fetchMoreData}
-                    hasMore={this.state.articles.length !== this.state.totalResults}
-                    loader={<Spinner />}
-                >
-                    <div style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(3, 1fr)",
-                        columnGap: "10px"
-                    }}>
-                        {this.state.articles.map((e, index) => {
-                            return <NewsItem key={index} title={e.title} description={e.description} imageUrl={e.urlToImage} newsUrl={e.url} author={e.author} date={e.publishedAt} source={e.source.name} />
-                        })}
-                    </div >
+            <InfiniteScroll
+                dataLength={articles.length}
+                next={fetchMoreData}
+                hasMore={articles.length !== pageSize}
+                loader={<Spinner />}
+            >
+                <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    columnGap: "10px"
+                }}>
+                    {articles.map((e, index) => {
+                        return <NewsItem key={index} title={e.title} description={e.description} imageUrl={e.urlToImage} newsUrl={e.url} author={e.author} date={e.publishedAt} source={e.source.name} />
+                    })}
+                </div >
 
-                </InfiniteScroll>
+            </InfiniteScroll>
 
-            </div >
-        )
-    }
+        </div >
+    )
 }
 
 export default News
+
+News.defaultProps = {
+    category: "general",
+    country: "in",
+    pageSize: 15
+}
+
+News.propTypes = {
+    category: PropTypes.string,
+    country: PropTypes.string,
+    pageSize: PropTypes.number,
+    apiKey: PropTypes.string.isRequired
+}
